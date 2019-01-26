@@ -19,7 +19,7 @@
         <el-table :data="items" row-key="id" highlight-current-row style="width: 100%;">
             <el-table-column type="selection" width="55">
             </el-table-column>
-            <el-table-column prop="id" label="序号" width="150">
+            <el-table-column prop="id" label="ID" width="150">
             </el-table-column>
             <el-table-column prop="itemCode" label="元素编码" width="180">
             </el-table-column>
@@ -51,15 +51,29 @@
         </el-col>
         <!--编辑界面-->
         <el-dialog title="编辑元素" v-model="editItemVisible" :close-on-click-modal="false">
-            <el-form :model="editItem" label-width="20%" :rules="editItemsRules" ref="addForm">
+            <el-form :model="editItem" label-width="20%" :rules="editItemsRules" ref="addForm" @keyup.enter.native="editSubmit">
                 <el-form-item label="元素名称" prop="itemName">
-                    <el-input v-model="editItem.itemName" auto-complete="off" style="width: 80%"></el-input>
+                    <el-input v-model="editItem.itemName" auto-complete="off"  style="width: 80%"></el-input>
                 </el-form-item>
                 <el-form-item label="元素Code" prop="itemCode">
                     <el-input v-model="editItem.itemCode" auto-complete="off" style="width: 80%"></el-input>
                 </el-form-item>
                 <el-form-item label="元素显示值" prop="value">
                     <el-input v-model="editItem.value" auto-complete="off" style="width: 80%"></el-input>
+                </el-form-item>
+                <el-form-item label="显示类型">
+                    <el-select v-model="editItem.tableType" placeholder="请选择元素显示类型">
+                        <el-option label="普通的单个元素" value="ITEM"></el-option>
+                        <el-option label="可选项" value="OPTION"></el-option>
+                        <el-option label="表头元素" value="TABLE_HEAD"></el-option>
+                        <el-option label="表体元素" value="TABLE_BODY"></el-option>
+                        <el-option label="带字的不可编辑的分割线" value="TABLE_LINE"></el-option>
+                        <el-option label="带字的不可编辑的分割线" value="OTHER"></el-option>
+                    </el-select>
+                    <el-select v-if="chooseParent" filterable v-model="editItem.parentId" placeholder="请选择父元素"
+                               style="width: 49%">
+                        <el-option v-for="item in items" :label="item.itemName" :value="item.id"></el-option>
+                    </el-select>
                 </el-form-item>
                 <el-form-item label="元素类型">
                     <el-select v-model="editItem.itemType" placeholder="请选择元素类别">
@@ -71,18 +85,14 @@
                     </el-select>
                 </el-form-item>
                 <el-form-item label="元素分组">
-                    <el-input v-model="editItem.typeName" auto-complete="off" style="width: 80%"></el-input>
-                </el-form-item>
-                <el-form-item label="显示类型">
-                    <el-select v-model="editItem.tableType" placeholder="请选择元素显示类型">
-                        <el-option label="普通的单个元素" value="ITEM"></el-option>
-                        <el-option label="可选项" value="OPTION"></el-option>
-                        <el-option label="表头元素" value="TABLE_HEAD"></el-option>
-                        <el-option label="表体元素" value="TABLE_BODY"></el-option>
-                        <el-option label="带字的不可编辑的分割线" value="TABLE_LINE"></el-option>
-                        <el-option label="带字的不可编辑的分割线" value="OTHER"></el-option>
+                    <el-select v-model="editItem.typeName" placeholder="请选择分组名称" style="">
+                        <el-option v-for="typename in typeNames" :key="typename" :label="typename"
+                                   :value="typename"></el-option>
                     </el-select>
+                    <el-input v-model="editItem.typeName" auto-complete="off" placeholder="请输入分组名称"
+                              style="width: 49%"></el-input>
                 </el-form-item>
+
                 <el-form-item label="数据类型">
                     <el-select v-model="editItem.dataType" placeholder="请选择元素的数据类型">
                         <el-option label="整数" value="INT"></el-option>
@@ -92,18 +102,18 @@
                     </el-select>
                 </el-form-item>
                 <el-form-item label="排序">
-                    <el-input v-model="editItem.sort" auto-complete="off" style="width: 80%"></el-input>
+                    <el-input-number v-model="editItem.sort" auto-complete="off" style="width: 80%"></el-input-number>
                 </el-form-item>
             </el-form>
             <div slot="footer" class="dialog-footer">
                 <el-button @click.native="editItemVisible = false">取消</el-button>
-                <el-button type="primary" @click.native="editSubmit">提交</el-button>
+                <el-button type="primary" @click.native="editSubmit" >提交</el-button>
             </div>
         </el-dialog>
 
         <!--新增界面-->
         <el-dialog title="新增元素" v-model="addItemVisible" :close-on-click-modal="false">
-            <el-form :model="addItem" label-width="20%" :rules="addItemsRules" ref="addForm">
+            <el-form :model="addItem" label-width="20%" :rules="addItemsRules" ref="addForm" @keyup.enter.native="addSubmit">
                 <el-form-item label="元素名称" prop="itemName">
                     <el-input v-model="addItem.itemName" auto-complete="off" style="width: 80%"></el-input>
                 </el-form-item>
@@ -120,9 +130,10 @@
                         <el-option label="表头元素" value="TABLE_HEAD"></el-option>
                         <el-option label="表体元素" value="TABLE_BODY"></el-option>
                         <el-option label="带字的不可编辑的分割线" value="TABLE_LINE"></el-option>
-                        <el-option label="带字的不可编辑的分割线" value="OTHER"></el-option>
+                        <el-option label="其它元素，分隔符，空行等" value="OTHER"></el-option>
                     </el-select>
-                    <el-select v-if="chooseParent" filterable v-model="addItem.parentId" placeholder="请选择父元素" style="width: 49%">
+                    <el-select v-if="chooseParent" filterable v-model="addItem.parentId" placeholder="请选择父元素"
+                               style="width: 49%">
                         <el-option v-for="item in items" :label="item.itemName" :value="item.id"></el-option>
                     </el-select>
                 </el-form-item>
@@ -153,12 +164,12 @@
                     </el-select>
                 </el-form-item>
                 <el-form-item label="排序">
-                    <el-input v-model="addItem.sort" type="number" auto-complete="off" style="width: 80%"></el-input>
+                    <el-input-number v-model="addItem.sort" auto-complete="off" style="width: 80%"></el-input-number>
                 </el-form-item>
             </el-form>
             <div slot="footer" class="dialog-footer">
                 <el-button @click.native="addItemVisible = false">取消</el-button>
-                <el-button type="primary" @click.native="addSubmit">提交</el-button>
+                <el-button type="primary" @click.native="addSubmit" >提交</el-button>
             </div>
         </el-dialog>
     </section>
@@ -167,7 +178,7 @@
 </template>
 
 <script>
-    import {addSysItem, getSysItems, getTypeNames} from "../api/api";
+    import {addSysItem, deleteSysItem, getSysItems, getTypeNames, updateSysItem} from "../api/api";
     import Sortable from 'sortablejs'
 
     export default {
@@ -175,7 +186,7 @@
         computed: {
             chooseParent: function () {
                 let tableType = this.addItem.tableType;
-                return tableType == 'OPTION' || tableType == 'TABLE_HEAD' || tableType == 'TABLE_BODY'
+                return tableType == 'OPTION'
             }
         },
         data() {
@@ -203,7 +214,7 @@
         methods: {
             getItems() {
                 getSysItems().then(res => {
-                    // console.log(res)
+                    console.log(res)
                     this.items = res.data
                 })
             },
@@ -215,6 +226,13 @@
                 this.editItemVisible = true;
                 this.editItem = Object.assign({}, row);
             },
+            handleDel(index, row) {
+                deleteSysItem(row.id).then(res => {
+                    this.showMessage(res,()=>{
+                        this.getItems();
+                    })
+                })
+            },
             handleAdd() {
                 this.addItemVisible = true
             },
@@ -222,25 +240,36 @@
 
             },
             editSubmit() {
-
+                updateSysItem(this.editItem).then(res => {
+                    this.showMessage(res, () => {
+                        this.getItems();
+                        this.editItemVisible = false
+                    })
+                })
             },
             addSubmit() {
                 addSysItem(this.addItem).then(res => {
-                    if (res.status == 0) {
-                        this.$message({
-                            message: '操作成功',
-                            type: 'success'
-                        });
+                    this.showMessage(res, () => {
                         this.getItems();
                         this.getTypeNames();
-                    } else {
-                        this.$message({
-                            message: '操作失败',
-                            type: 'error'
-                        });
-                    }
-
+                        this.addItem.sort= parseInt(this.addItem.sort) + 1;
+                    })
                 })
+            },
+            showMessage(response, successCallBack, errorCallback) {
+                if (response.status == 0) {
+                    successCallBack();
+                    this.$message({
+                        message: '操作成功',
+                        type: 'success'
+                    });
+                } else {
+                    this.$message({
+                        message: '操作失败',
+                        type: 'error'
+                    });
+                    errorCallback();
+                }
             },
             //行拖拽
             /*rowDrop() {

@@ -10,6 +10,9 @@ import Page5 from './views/nav2/Page5.vue'
 import Page6 from './views/nav3/Page6.vue'
 import echarts from './views/charts/echarts.vue'
 import SysItem from './views/SysItem'
+import TemplateStruct from './views/TemplateStruct'
+import Template from './views/Template'
+import SelectItems from './views/SelectItems'
 
 let routes = [
     /*{
@@ -42,7 +45,7 @@ let routes = [
         iconCls: 'el-icon-message',//图标样式class
         leaf: true,
         children: [
-            {path: '/user', component: user, name: '模板控制'},
+            {path: '/struct', component: TemplateStruct, name: '模板结构'},
         ]
     },
     {
@@ -52,19 +55,25 @@ let routes = [
         iconCls: 'el-icon-message',//图标样式class
         leaf: true,
         children: [
-            {path: '/table', component: Table, name: '模块管理'},
+            {
+                path: '/templ', component: Template, name: '模板管理'
+            },
         ]
     },
     {
         path: '/',
         component: Home,
+        hidden:true,
         // name: '导航一',
         iconCls: 'el-icon-message',//图标样式class
         leaf: true,
         children: [
-            {path: '/form', component: Form, name: '模板管理'},
+            {
+                path: '/select_items', component: SelectItems, name: '关联元素'
+            },
         ]
     },
+
     /*{
         path: '/',
         component: Home,
